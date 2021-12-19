@@ -20,7 +20,6 @@ import 'reflect-metadata';
 import dayjs from 'dayjs';
 import { IUserService, USER_IOC_SYMBOLS } from '../../User/Types';
 import { container } from '../../../Config/inversify.config';
-import { NotImplementedError } from '../../../Error/ErrorClass';
 @injectable()
 class SubCommentCrawler implements ISubCommentCrawler {
   private commentService!: ICommentService;
@@ -45,15 +44,14 @@ class SubCommentCrawler implements ISubCommentCrawler {
   startCrawling = (commentId: string) => {
     asyncPriorityQueuePush(
       this.crawl,
-      { commentId /* other initial params here */ },
+      { commentId, page: 1, pageSize: 10 },
       Q_PRIORITY.CRAWLER_SUB_COMMENT,
     );
   };
 
   private crawl = async (params: SubCommentCrawlerParams) => {
-    const { commentId /* deconstruct other params for the API here  */ } =
-      params;
-    const res = await getSubCommentApi(/* API params here */);
+    const { commentId, page, pageSize } = params;
+    const res = await getSubCommentApi(commentId, page, pageSize);
 
     const { infos, usersRaw } = this.scrapeData(res, commentId);
     const nextParams = this.transformNextParams(res, params);
@@ -87,14 +85,44 @@ class SubCommentCrawler implements ISubCommentCrawler {
     infos: ISubComment[];
     usersRaw: unknown[];
   } {
-    throw new NotImplementedError('Not implemented');
+    const { subComments } = res.data;
+    const infos = subComments.map((raw: any): ISubComment => {
+      return {
+        id: raw.id,
+        commentId,
+        floorNumber: -1,
+        content: raw.content,
+        user: raw.user.id,
+        upvotesCount: raw.upvotesCount,
+        createTime: dayjs(raw.createTime).valueOf(),
+        saveTime: dayjs().valueOf(),
+        replyTo: raw.replyTo,
+      };
+    });
+    const usersRaw: unknown[] = subComments.map(
+      (commentRaw: any) => commentRaw.user,
+    );
+    return {
+      infos,
+      usersRaw,
+    };
   }
 
   private transformNextParams(
     res: any,
     prevParams: SubCommentCrawlerParams,
   ): SubCommentCrawlerParams | null {
-    throw new NotImplementedError('Not implemented');
+    const { commentId, page, pageSize } = prevParams;
+    const { subComments } = res.data;
+    if (subComments.length === 0) {
+      // no more sub comments
+      return null;
+    }
+    return {
+      commentId,
+      page: page + 1,
+      pageSize,
+    };
   }
 }
 

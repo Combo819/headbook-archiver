@@ -5,9 +5,15 @@ import { NotImplementedError } from '../../../Error/ErrorClass';
 /**
  * get a batch of comments
  */
-function getCommentApi(/* params here */): AxiosPromise {
+function getCommentApi(postId:string,page:number,pageSize:number): AxiosPromise {
   /* axios config here */
-  throw new NotImplementedError('getCommentApi is not implemented');
+  return crawlerAxios(`/api/comment`,{
+    params:{
+      postId,
+      page,
+      pageSize
+    }
+  })
 }
 
 export { getCommentApi };

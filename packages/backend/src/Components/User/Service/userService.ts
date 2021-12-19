@@ -19,6 +19,7 @@ import { getUserIdByUsernameApi, getUserInfoByIdApi } from './userApi';
 import { migrate } from '../../../Utility/migrate/migrate';
 import { NotImplementedError } from '../../../Error/ErrorClass';
 import { getUrlLastSegment } from '../../../Utility/urlParse';
+import { BASE_URL } from '../../../Config';
 
 @injectable()
 class UserService implements IUserService {
@@ -39,9 +40,19 @@ class UserService implements IUserService {
   };
 
   transformUserResponse(userRaw: any): IUser {
-    throw new NotImplementedError(
-      `transformUserResponse in UserService is not implemented`,
-    );
+    const userInfo = {
+      id: userRaw.id,
+      username: userRaw.username,
+      profileUrl: userRaw.profileUrl,
+      gender: userRaw.gender,
+      followersCount: userRaw.followersCount,
+      followingCount: userRaw.followingCount,
+      image: {
+        name: userRaw.image.name,
+        originUrl: BASE_URL + '/images/' + userRaw.image.name,
+      },
+    };
+    return userInfo;
   }
 
   async getUserByName(name: string): Promise<IUser[]> {

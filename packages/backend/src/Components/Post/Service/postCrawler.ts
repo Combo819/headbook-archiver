@@ -13,7 +13,7 @@ import { injectable, inject } from 'inversify';
 import 'reflect-metadata';
 import { logger } from '../../../Logger';
 import { asyncPriorityQueuePush } from '../../../Jobs/Queue';
-import { Q_PRIORITY } from '../../../Config';
+import { BASE_URL, Q_PRIORITY } from '../../../Config';
 import { NotFoundError } from '../../../Error/ErrorClass';
 import dayjs from 'dayjs';
 import { ImageServiceInterface, IMAGE_IOC_SYMBOLS } from '../../Image/Types';
@@ -120,7 +120,7 @@ class PostCrawler implements IPostCrawler {
       }
       const userInfo = this.userService.transformUserResponse(userRaw);
       this.userService.save(userInfo);
-      
+
       this.commentService.startCrawling(postDoc.get('id'));
       this.repostCommentService.startCrawling(postDoc.get('id'));
 
@@ -148,7 +148,47 @@ class PostCrawler implements IPostCrawler {
   } {
     /* extract the information here. If it's a html document, 
     try to manipulate the html with cheerio */
-    throw new Error('Not implemented');
+    const postRaw = res.data.post;
+    const $ = cheerio.load(postRaw.content);
+    const embedImages: string[] = [];
+    $('img').each(function (index: number, element: any) {
+      const oldSrc = $(element).attr('src');
+      if (!oldSrc) return;
+      const fileName: string = _.last(oldSrc.split('/')) as string;
+      const newSrc = `/images/${fileName}`;
+      embedImages.push(BASE_URL + oldSrc);
+      $(element).attr('src', newSrc);
+    });
+    const postInfo: IPost = {
+      id: postRaw.id,
+      createTime: postRaw.createTime,
+      content: $.html(),
+      repostsCount: postRaw.repostsCount,
+      commentsCount: postRaw.commentsCount,
+      upvotesCount: postRaw.upvotesCount,
+      user: postRaw.user.id,
+      comments: postRaw.comments,
+      images: postRaw.images.map((image: any) => ({
+        name: image.name,
+        originUrl: BASE_URL + '/images/' + image.name,
+      })),
+      videos: postRaw.videos.map((video: any) => ({
+        name: video.name,
+        originUrl: BASE_URL + '/videos/' + video.name,
+      })),
+      saveTime: postRaw.saveTime, // dayjs.valueof(...)
+      repostingId: postRaw.repostingId,
+      repostComments: postRaw.repostComments,
+    };
+    const userRaw = postRaw.user;
+    const repostingId: string = postRaw.repostingId;
+
+    return {
+      postInfo,
+      userRaw,
+      repostingId,
+      embedImages,
+    };
   }
 }
 

@@ -57,15 +57,17 @@ class CommentCrawler {
     asyncPriorityQueuePush(
       this.crawl,
       {
-        postId /* other initial params here */,
+        postId,
+        page: 1,
+        pageSize: 10,
       },
       Q_PRIORITY.CRAWLER_COMMENT,
     );
   };
 
   private crawl = async (params: CommentCrawlParams) => {
-    const { postId /* deconstruct other params for the API here  */ } = params;
-    const res = await getCommentApi(/* API params here */);
+    const { postId, page, pageSize } = params;
+    const res = await getCommentApi(postId, page, pageSize);
 
     const { infos, usersRaw } = this.scrapeData(res, postId);
     const nextParams = this.transformNextParams(res, params);
@@ -108,14 +110,43 @@ class CommentCrawler {
     infos: IComment[];
     usersRaw: unknown[];
   } {
-    throw new NotImplementedError('Not implemented');
+    const { comments } = res.data;
+    const infos: IComment[] = comments.map((commentRaw: any) => {
+      return {
+        id: commentRaw.id,
+        floorNumber: commentRaw.floorNumber, // or -1 if not exist
+        content: commentRaw.content,
+        subCommentsCount: commentRaw.subCommentsCount,
+        user: commentRaw.user.id, // user id
+        upvotesCount: commentRaw.upvotesCount,
+        createTime: dayjs(commentRaw.createTime).valueOf(),
+        subComments: commentRaw.subComments, // sub comment ids
+        postId,
+        saveTime: dayjs().valueOf(),
+      };
+    });
+    const usersRaw: unknown[] = comments.map((commentRaw: any) => commentRaw.user);
+    return {
+      infos,
+      usersRaw,
+    };
   }
 
   private transformNextParams(
     res: any,
     params: CommentCrawlParams,
   ): CommentCrawlParams | null {
-    throw new NotImplementedError('Not implemented');
+    const { postId, page, pageSize } = params;
+    const { comments } = res.data;
+    if (comments.length === 0) {
+      // no more comments
+      return null;
+    }
+    return {
+      postId,
+      page: page + 1,
+      pageSize,
+    };
   }
 }
 

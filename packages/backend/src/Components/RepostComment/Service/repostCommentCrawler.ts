@@ -41,14 +41,14 @@ class RepostCommentCrawler implements IRepostCommentCrawler {
   startCrawling = (postId: string) => {
     asyncPriorityQueuePush(
       this.crawl,
-      { postId /* other initial params here */ },
+      { postId, page: 1, pageSize: 10 },
       Q_PRIORITY.CRAWLER_REPOST_COMMENT,
     );
   };
 
   private crawl = async (params: RepostCommentCrawlerParams) => {
-    const { postId /* deconstruct other params for the API here  */ } = params;
-    const res = await getRepostCommentApi(/* API params here */);
+    const { postId, page, pageSize } = params;
+    const res = await getRepostCommentApi(postId, page, pageSize);
     const { usersRaw, infos } = this.scrapeInfoUser(res, postId);
     const nextParams = this.transformNextParams(res, params);
     map(infos, asyncify(this.repostCommentService.save));
@@ -84,14 +84,43 @@ class RepostCommentCrawler implements IRepostCommentCrawler {
     infos: IRepostComment[];
     usersRaw: unknown[];
   } {
-    throw new NotImplementedError('Not implemented');
+    const { repostComments } = res.data;
+    const infos: IRepostComment[] = repostComments.map(
+      (repostCommentRaw: any) => {
+        return {
+          id: repostCommentRaw.id,
+          content: repostCommentRaw.content,
+          user: repostCommentRaw.user.id,
+          createTime: repostCommentRaw.createTime,
+          repostedId: postId,
+          saveTime: dayjs().valueOf(),
+        };
+      },
+    );
+    const usersRaw: unknown[] = repostComments.map(
+      (comment: any) => comment.user,
+    );
+    return {
+      infos,
+      usersRaw,
+    };
   }
 
   private transformNextParams(
     res: any,
     prevParams: RepostCommentCrawlerParams,
   ): RepostCommentCrawlerParams | null {
-    throw new NotImplementedError('Not implemented');
+    const { postId, page, pageSize } = prevParams;
+    const { repostComments } = res.data;
+    if (repostComments.length === 0) {
+      // no more repost comment
+      return null;
+    }
+    return {
+      postId,
+      page: page + 1,
+      pageSize,
+    };
   }
 }
 

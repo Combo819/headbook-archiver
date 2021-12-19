@@ -1,12 +1,23 @@
 import { crawlerAxios } from '../../../Config';
 import { AxiosPromise } from 'axios';
-import { NotImplementedError } from '../../../Error/ErrorClass';
 
 /**
  *
  */
-function getRepostCommentApi(): AxiosPromise {
-  throw new NotImplementedError('getRepostCommentApi is not implemented');
+function getRepostCommentApi(
+  postId: string,
+  page: number,
+  pageSize: number,
+): AxiosPromise {
+  return crawlerAxios({
+    url: `/api/repostComment`,
+    method: 'get',
+    params: {
+      postId,
+      page,
+      pageSize,
+    },
+  });
 }
 
 export { getRepostCommentApi };

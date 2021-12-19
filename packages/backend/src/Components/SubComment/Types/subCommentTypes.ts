@@ -25,11 +25,7 @@ type ISubCommentPopulated = Omit<Omit<ISubComment, 'user'>, 'replyTo'> & {
 } & { replyTo?: IUser };
 
 interface ISubCommentService
-  extends IBaseService<
-    ISubComment,
-    SubCommentDocument,
-    ISubCommentPopulated
-  > {}
+  extends IBaseService<ISubComment, SubCommentDocument, ISubCommentPopulated> {}
 
 interface ISubCommentCrawler extends IBaseCrawler {}
 
@@ -38,7 +34,8 @@ interface ISubCommentCrawler extends IBaseCrawler {}
  */
 type SubCommentCrawlerParams = {
   commentId: string;
-  /* possible other properties */
+  page: number;
+  pageSize: number;
 };
 
 export {

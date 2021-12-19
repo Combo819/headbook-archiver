@@ -1,4 +1,4 @@
-const BASE_URL: string = '';
+const BASE_URL: string = 'https://head-book.ml';
 
 const Q_CONCURRENCY: number = 1;
 const MAX_ITEM_WINDOW: number = 6;

@@ -36,20 +36,14 @@ interface ICommentDAL extends IBaseDAL<IComment, CommentDocument> {
 }
 
 interface ICommentService
-  extends IBaseService<
-    IComment,
-    CommentDocument,
-    ICommentPopulated
-  > {
-  addSubComments: (
-    subCommentIds: string[],
-    commentId: string,
-  ) => Promise<void>;
+  extends IBaseService<IComment, CommentDocument, ICommentPopulated> {
+  addSubComments: (subCommentIds: string[], commentId: string) => Promise<void>;
 }
 
 type CommentCrawlParams = {
   postId: string;
-  /* possible other properties */
+  page: number;
+  pageSize: number;
 };
 
 interface ICommentCrawler {

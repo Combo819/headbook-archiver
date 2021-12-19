@@ -32,7 +32,8 @@ interface IRepostCommentCrawler extends IBaseCrawler {}
 
 type RepostCommentCrawlerParams = {
   postId: string;
-  /* possible other properties */
+  page: number;
+  pageSize: number;
 };
 
 export {
